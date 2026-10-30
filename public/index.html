@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JobKit – from “no experience” to application-ready</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--tx:#1b1f2a;--mut:#5d6578;--bd:#dfe3ee;--ac:#4f46e5;--ok:#0f9d6b;--bad:#d6455d}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1220;--card:#181c2e;--tx:#e8eaf3;--mut:#9aa2bb;--bd:#2a3050;--ac:#8b85ff;--ok:#34d399;--bad:#ff7b93}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,sans-serif}
+.w{max-width:1000px;margin:auto;padding:20px 16px 48px}h1{margin:0;font-size:1.7rem}.s{color:var(--mut);margin:4px 0 18px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:720px){.g{grid-template-columns:1fr}}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:14px}
+textarea{width:100%;min-height:190px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:10px;font:inherit;font-size:.92rem}
+button{font:inherit;font-weight:600;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:9px 14px;cursor:pointer}
+button.p{background:var(--ac);border-color:var(--ac);color:#fff}button:disabled{opacity:.5}
+.sc{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.n{font-size:2.4rem;font-weight:800}.b{color:var(--bad)}.a{color:var(--ok)}
+.rw{border-left:3px solid var(--ac);padding:6px 12px;margin:10px 0}.mut{color:var(--mut);font-size:.88rem}.err{color:var(--bad)}
+h2{font-size:1.05rem;margin:0 0 8px}ul{padding-left:20px;margin:6px 0}
+</style></head><body><div class="w">
+<h1>💼 JobKit</h1><p class="s">Most job tools polish what you have. JobKit helps first-time job seekers build what they’re missing, honestly.</p>
+<div class="g"><div class="c"><b>Job description</b><textarea id="job" placeholder="Paste the job post…"></textarea></div>
+<div class="c"><b>Your CV (plain text)</b><textarea id="cv" placeholder="Paste your CV…"></textarea></div></div>
+<button class="p" id="go">Analyze my fit</button> <button id="demo">Try sample data</button>
+<div id="out" style="margin-top:16px"></div>
+<p class="mut">AI suggestions use only facts from your CV. Always review before sending.</p></div>
+<script>
+const $=s=>document.querySelector(s),E=s=>String(s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+$("#demo").onclick=()=>{$("#job").value="Junior Software Engineer (Python/React). Build web features with React and a Python/Flask backend, write tests, work in an agile team. Nice to have: REST APIs, Git, SQL, LLM API experience.";
+$("#cv").value="CSE graduate. Projects: Built a React + Node expense tracker with REST APIs and MongoDB; trained a CNN image classifier in Python (92% accuracy); thesis on retrieval-augmented chart question answering. Skills: Python, JavaScript, React, SQL, Git, PyTorch. Led a 3-person team in a university hackathon."};
+$("#go").onclick=async()=>{const o=$("#out"),b=$("#go");b.disabled=true;o.innerHTML='<div class="c">Analyzing… (10–20 seconds)</div>';
+try{const r=await fetch("/api/analyze",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({job:$("#job").value,cv:$("#cv").value})});
+const d=await r.json();if(!r.ok)throw new Error(d.error);
+o.innerHTML=`<div class="c"><div class="sc"><div><div class="mut">Before</div><div class="n b">${+d.beforeScore}%</div></div><div class="n">→</div><div><div class="mut">After rewrites</div><div class="n a">${+d.afterScore}%</div></div></div><p>${E(d.summary)}</p></div>
+<div class="c"><h2>✅ Your strengths</h2><ul>${(d.strengths||[]).map(x=>`<li>${E(x)}</li>`).join("")}</ul></div>
+<div class="c"><h2>📝 Evidence-locked rewrites</h2>${(d.rewrites||[]).map(x=>`<div class="rw"><div class="mut">Before: ${E(x.original)}</div><div><b>After:</b> ${E(x.improved)}</div><div class="mut">🔒 Based on: “${E(x.evidence)}”</div></div>`).join("")}</div>
+<div class="c"><h2>🚀 Gap-to-offer plan</h2>${(d.gaps||[]).map(x=>`<div class="rw"><b>${E(x.skill)}</b> <span class="mut">– ${E(x.why)}</span><div>${E(x.plan)}</div></div>`).join("")}</div>
+<div class="c"><h2>⚠️ Don’t claim these (no evidence in your CV)</h2><ul>${(d.warnings||[]).map(x=>`<li>${E(x)}</li>`).join("")}</ul></div>`;
+}catch(e){o.innerHTML=`<div class="c err">${E(e.message)}</div>`}finally{b.disabled=false}};
+</script></body></html>
